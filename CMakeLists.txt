@@ -24,9 +24,7 @@ pico_sdk_init()
 
 add_executable(${PROJECT_NAME}
         main.cpp
-        pi-pico-cpp/src/crc64.c
         pi-pico-cpp/src/Color.cpp
-        pi-pico-cpp/src/Settings.cpp
 )
 
 pico_generate_pio_header(${PROJECT_NAME} ${CMAKE_CURRENT_LIST_DIR}/pi-pico-cpp/pio/ws2812b.pio)
