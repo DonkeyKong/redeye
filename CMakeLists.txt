@@ -9,6 +9,14 @@ set(PICO_BOARD "pico")
 include(pico_sdk_import.cmake)
 include(pico_extras_import_optional.cmake)
 
+find_path (PI_PICO_CPP_DIR
+          NAMES include/cpp/Logging.hpp pio/ws2812b.pio
+          HINTS ${CMAKE_CURRENT_LIST_DIR}/pi-pico-cpp
+                ${CMAKE_CURRENT_LIST_DIR}/..
+                ${CMAKE_CURRENT_LIST_DIR}/../pi-pico-cpp
+         )
+message(STATUS "Found Pi Pico C++ at ${PI_PICO_CPP_DIR}")
+
 set(PROJECT_NAME "redeye")
 
 project(${PROJECT_NAME} C CXX ASM)
@@ -24,14 +32,13 @@ pico_sdk_init()
 
 add_executable(${PROJECT_NAME}
         main.cpp
-        pi-pico-cpp/src/Color.cpp
 )
 
-pico_generate_pio_header(${PROJECT_NAME} ${CMAKE_CURRENT_LIST_DIR}/pi-pico-cpp/pio/ws2812b.pio)
+pico_generate_pio_header(${PROJECT_NAME} ${PI_PICO_CPP_DIR}/pio/ws2812b.pio)
 
 target_include_directories(${PROJECT_NAME} PRIVATE
         ${CMAKE_CURRENT_LIST_DIR}
-        ${CMAKE_CURRENT_LIST_DIR}/pi-pico-cpp/include
+        ${PI_PICO_CPP_DIR}/include
 )
 
 target_link_libraries(${PROJECT_NAME}

@@ -23,27 +23,6 @@
 #include <iostream>
 #include <string>
 #include <algorithm>
-#include <map>
-
-enum class EyeState
-{
-  Neutral,
-  Happy,
-  Sad,
-  Blank,
-};
-
-void setupAnim(std::map<EyeState, LEDBuffer>& anim)
-{
-  RGBColor r{255, 0, 0};
-  RGBColor k{0, 0, 0};
-  anim = {
-    {EyeState::Neutral, {r,r,r,r,r,r,r,r,r,r,r,r}},
-    {EyeState::Happy,   {k,k,k,k,k,r,r,r,r,r,r,r}},
-    {EyeState::Sad,     {r,r,r,r,r,r,k,k,k,k,k,r}},
-    {EyeState::Blank,   {k,k,k,k,k,k,k,k,k,k,k,k}},
-  };
-}
 
 int main()
 {
@@ -65,44 +44,30 @@ int main()
   flashStorage.readFromFlash();
   EyeParams& eyeParams = flashStorage.data;
   float eyeVerge = 1000.0f;
-  Eyes eyes(servoLX, servoLY, servoRX, servoRY, eyeParams);
 
   // Setup the lights and eye animation system
-  std::map<EyeState, LEDBuffer> anim;
-  setupAnim(anim);
-  EyeState currentAnim = EyeState::Neutral;
-  int ringLightOffset = 6;
   LedStripWs2812b ledL = LedStripWs2812b::create(4);
   LedStripWs2812b ledR = LedStripWs2812b::create(5);
+
+  Eyes eyes(servoLX, servoLY, servoRX, servoRY, ledL, ledR, eyeParams);
 
   // Setup the controller input object
   bool enableNunchuck = true;
   Nunchuck nunchuck(i2c1, 14, 15);
-
-  // Create a utility function for turning off the servos and LEDs
-  auto shutdownHardware = [&]()
-  {
-    servoLX.release();
-    servoLY.release();
-    servoRX.release();
-    servoRY.release();
-    ledL.writeColors(anim[EyeState::Blank], 0.0f);
-    ledR.writeColors(anim[EyeState::Blank], 0.0f);
-  };
 
   // Init the command parser
   CommandParser parser;
   parser.addCommand("reboot", [&]()
   {
     std::cout << "ok" << std::endl;
-    shutdownHardware();
+    eyes.shutdownHardware();
     watchdog_reboot(0,0,0);
   }, "", "Reboot the microcontroller");
 
   parser.addCommand("prog", [&]()
   {
     std::cout << "ok" << std::endl;
-    shutdownHardware();
+    eyes.shutdownHardware();
     reset_usb_boot(0,0);
   }, "", "Enter USB programming mode");
 
@@ -124,12 +89,12 @@ int main()
   parser.addCommand("ipd", [&](double ipd)
   {
     eyeParams.ipd = ipd;
-  }, "[dist]", "Set interpupilary distance (eye spacing)");
+  }, "[dist]", "Set interpupilary distance");
 
   parser.addCommand("verge", [&](double verge)
   {
     eyeVerge = verge;
-  }, "[dist]", "Set verge distance (distance to focus)");
+  }, "[dist]", "Set distance to convergence");
 
   parser.addCommand("center", [&](std::string side)
   {
@@ -171,9 +136,8 @@ int main()
     // the object enforces this but we might as well try to do work in between...
     nunchuck.requestControllerState();
 
-    // Refresh the ring lights
-    ledL.writeColors(anim[currentAnim], 0.2f);
-    ledR.writeColors(anim[currentAnim], 0.2f);
+    // Refresh the ring lights and move the servos
+    eyes.update();
 
     // Give the command parser a chance to read stdin
     parser.processStdIo();
@@ -181,17 +145,13 @@ int main()
     nunchuck.fetchControllerState();
     if (enableNunchuck && nunchuck.ok())
     {
-      if (nunchuck.c())
+      if (nunchuck.c.buttonDown())
       {
-        // // Pick an emotion with accelerometer
-        // if (nunchuck.accelY() < -0.5f) currentAnim = EyeState::Happy;
-        // else if (nunchuck.accelY() > 0.5f) currentAnim = EyeState::Sad;
-        // else currentAnim = EyeState::Neutral;
-        currentAnim = EyeState::Blank;
+        eyes.triggerAnim(EyeAnim::Blink);
       }
-      else
+      else if (nunchuck.c.buttonUp())
       {
-        currentAnim = EyeState::Neutral;
+        eyes.endAnim();
       }
 
       if (nunchuck.z())
@@ -202,8 +162,6 @@ int main()
       eyes.lookDir(nunchuck.stickX() * 90.0f, nunchuck.stickY() * 90.0f, eyeVerge);
       
     }
-
-    eyes.update();
   }
   return 0;
 }
