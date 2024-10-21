@@ -12,14 +12,16 @@
 static float LedIdxToX[12];
 static float LedIdxToY[12];
 
-enum class EyeBase
+enum class EyeBase : int
 {
   Off,
   Neutral,
+  Red,
   Sad,
   Happy,
   //Angry,
   Debug,
+  EyeBaseSize // Make sure this is always the last enum
 };
 
 enum class EyeAnim
@@ -182,6 +184,7 @@ public:
 
     bases_ = {
       {EyeBase::Neutral, {w,w,w,w,w,w,w,w,w,w,w,w}},
+      {EyeBase::Red,     {r,r,r,r,r,r,r,r,r,r,r,r}},
       {EyeBase::Happy,   {k,k,k,k,k,w,w,w,w,w,w,w}},
       {EyeBase::Sad,     {w,w,w,w,w,w,k,k,k,k,k,w}},
       {EyeBase::Off,     {k,k,k,k,k,k,k,k,k,k,k,k}},
@@ -202,6 +205,11 @@ public:
   void setBase(EyeBase state)
   {
     base_ = state;
+  }
+
+  EyeBase getBase()
+  {
+    return base_;
   }
 
   void setColor(RGBColor color)
@@ -275,8 +283,8 @@ public:
     yr_.posDeg(yawR + offsetYR);
     pr_.posDeg(pitchR + offsetPR);
 
-    l_.writeColors(lBuf_, 0.1f);
-    r_.writeColors(rBuf_, 0.1f);
+    l_.writeColors(lBuf_, 0.05f);
+    r_.writeColors(rBuf_, 0.05f);
   }
 
   void shutdownHardware()

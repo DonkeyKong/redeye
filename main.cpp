@@ -1,5 +1,6 @@
 // application headers
 #include "Eyes.hpp"
+#include "MovingAverage.hpp"
 
 // pi pico C++ headers
 #include <cpp/Color.hpp>
@@ -54,6 +55,7 @@ int main()
   // Setup the controller input object
   bool enableNunchuck = true;
   Nunchuck nunchuck(i2c1, 14, 15);
+  MovingAverage<5> stickX, stickY;
 
   // Init the command parser
   CommandParser parser;
@@ -145,21 +147,33 @@ int main()
     nunchuck.fetchControllerState();
     if (enableNunchuck && nunchuck.ok())
     {
-      if (nunchuck.c.buttonDown())
-      {
-        eyes.triggerAnim(EyeAnim::Blink);
-      }
-      else if (nunchuck.c.buttonUp())
-      {
-        eyes.endAnim();
-      }
-
       if (nunchuck.z())
       {
-        eyeVerge = std::clamp((nunchuck.pitch() + 45.0f)* 4.0f, 1.0f, 3000.0f);
+        //eyeVerge = std::clamp((nunchuck.pitch() + 45.0f)* 4.0f, 1.0f, 3000.0f);
+        if (nunchuck.c.buttonUp())
+        {
+          eyes.setBase((EyeBase)(((int)eyes.getBase() + 1) % (int)EyeBase::EyeBaseSize));
+        }
       }
+      else
+      {
+        if (nunchuck.c.buttonDown())
+        {
+          eyes.triggerAnim(EyeAnim::Blink);
+        }
+        else if (nunchuck.c.buttonUp())
+        {
+          eyes.endAnim();
+        }
+      }
+
+
+
       
-      eyes.lookDir(nunchuck.stickX() * 90.0f, nunchuck.stickY() * 90.0f, eyeVerge);
+      stickX.update(nunchuck.stickX());
+      stickY.update(nunchuck.stickY());
+
+      eyes.lookDir(stickX * 90.0f, stickY * 90.0f, eyeVerge);
       
     }
   }
