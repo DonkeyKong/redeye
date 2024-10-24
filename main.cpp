@@ -118,7 +118,7 @@ int main()
 
   parser.addCommand("style", [&](int styleId)
   {
-    if (styleId >= (int)EyeBase::Off && styleId < (int)EyeBase::EyeBaseSize)
+    if (styleId >= (int)EyeBase::Neutral && styleId < (int)EyeBase::EyeBaseSize)
     {
       eyeParams.baseStyle = (EyeBase)styleId;
       return true;
@@ -127,7 +127,7 @@ int main()
     {
       return false;
     }
-  }, "[styleId]", "Set the eye style (default: 1)");
+  }, "[styleId]", "Set the eye style (default: 0)");
 
   parser.addCommand("center", [&](std::string side)
   {
