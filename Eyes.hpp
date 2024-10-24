@@ -14,13 +14,12 @@ static float LedIdxToY[12];
 
 enum class EyeBase : int
 {
-  Off,
   Neutral,
   Red,
   Sad,
   Happy,
-  //Angry,
   Debug,
+  Off,
   EyeBaseSize // Make sure this is always the last enum
 };
 
@@ -33,6 +32,7 @@ enum class EyeAnim
   // Fade,
   // Hypno,
   // Rainbow
+  EyeAnimSize // Make sure this is always the last enum
 };
 
 struct EyeParams
@@ -43,6 +43,7 @@ struct EyeParams
   float offsetYawR = 0.0f;
   float offsetPitchR = 0.0f;
   float speedDegSec = 600.0;
+  EyeBase baseStyle = EyeBase::Neutral;
 };
 
 class EyeAnimProg
@@ -142,7 +143,6 @@ class Eyes
   std::map<EyeBase, LEDBuffer> bases_;
   std::map<EyeAnim, std::unique_ptr<EyeAnimProg>> anims_;
   EyeAnim anim_ = EyeAnim::None;
-  EyeBase base_ = EyeBase::Neutral;
   LEDBuffer lBuf_;
   LEDBuffer rBuf_;
   static constexpr int ringLightOffset = 6;
@@ -204,12 +204,12 @@ public:
 
   void setBase(EyeBase state)
   {
-    base_ = state;
+    params_.baseStyle = state;
   }
 
   EyeBase getBase()
   {
-    return base_;
+    return params_.baseStyle;
   }
 
   void setColor(RGBColor color)
@@ -256,8 +256,16 @@ public:
     lastUpdateTime_ = now;
 
     // Reset the left and right buffers to their base image
-    lBuf_ = bases_[base_];
-    rBuf_ = bases_[base_];
+    if ((int)params_.baseStyle >= (int)EyeBase::Neutral && (int)params_.baseStyle < (int)EyeBase::EyeBaseSize)
+    {
+      lBuf_ = bases_[params_.baseStyle];
+      rBuf_ = bases_[params_.baseStyle];
+    }
+    else
+    {
+      lBuf_ = bases_[EyeBase::Off];
+      rBuf_ = bases_[EyeBase::Off];
+    }
 
     // If there is no animation or the animation is done
     // then revert back to the none animation

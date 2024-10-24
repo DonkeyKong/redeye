@@ -98,6 +98,37 @@ int main()
     eyeVerge = verge;
   }, "[dist]", "Set distance to convergence");
 
+  parser.addCommand("play", [&](int animId)
+  {
+    if (animId > (int)EyeAnim::None && animId < (int)EyeAnim::EyeAnimSize)
+    {
+      eyes.triggerAnim((EyeAnim)animId);
+      return true;
+    }
+    else
+    {
+      return false;
+    }
+  }, "[animId]", "Play an animation (Blink = 1)");
+
+  parser.addCommand("stop", [&]()
+  {
+    eyes.endAnim();
+  }, "", "Stop an animation");
+
+  parser.addCommand("style", [&](int styleId)
+  {
+    if (styleId >= (int)EyeBase::Off && styleId < (int)EyeBase::EyeBaseSize)
+    {
+      eyeParams.baseStyle = (EyeBase)styleId;
+      return true;
+    }
+    else
+    {
+      return false;
+    }
+  }, "[styleId]", "Set the eye style (default: 1)");
+
   parser.addCommand("center", [&](std::string side)
   {
     if (side == "l" || side == "b")
@@ -167,14 +198,10 @@ int main()
         }
       }
 
-
-
-      
       stickX.update(nunchuck.stickX());
       stickY.update(nunchuck.stickY());
 
       eyes.lookDir(stickX * 90.0f, stickY * 90.0f, eyeVerge);
-      
     }
   }
   return 0;
